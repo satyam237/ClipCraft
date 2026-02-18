@@ -182,11 +182,11 @@ export function useBackgroundUpload(
           setStatus("done");
         }
 
+        // Best-effort: start transcription via Edge Function (may not be deployed)
         supabase.functions
           .invoke("transcribe", { body: { video_id: createdVideoId } })
           .then((result) => {
             if (result.error) {
-              console.error("Transcribe function error:", result.error);
               supabase
                 .from("processing_jobs")
                 .update({ status: "failed", error_log: result.error.message })
@@ -195,11 +195,10 @@ export function useBackgroundUpload(
                 .then();
             }
           })
-          .catch((err) => {
-            console.error("Failed to invoke transcribe:", err);
+          .catch(() => {
             supabase
               .from("processing_jobs")
-              .update({ status: "failed", error_log: err.message })
+              .update({ status: "failed", error_log: "Edge function unavailable" })
               .eq("video_id", createdVideoId)
               .eq("job_type", "transcribe")
               .then();

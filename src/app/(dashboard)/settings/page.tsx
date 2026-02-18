@@ -5,7 +5,7 @@ export default async function SettingsPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   const { data: profile } = user
-    ? await supabase.from("profiles").select("*").eq("id", user.id).single()
+    ? await supabase.from("profiles").select("*").eq("id", user.id).maybeSingle()
     : { data: null };
 
   return (

@@ -91,7 +91,7 @@ export default function PreviewPage() {
         .from("profiles")
         .select("display_name")
         .eq("id", user.id)
-        .single();
+        .maybeSingle();
       if (!cancelled && profile?.display_name) {
         setOwnerName(profile.display_name);
       }
