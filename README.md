@@ -46,3 +46,15 @@ Video and clip management app built with Next.js and Supabase. Upload, organize,
 - **Development:** `npm run dev` – app at [http://localhost:3000](http://localhost:3000)
 - **Production build:** `npm run build` then `npm run start`
 - **Lint:** `npm run lint`
+
+## Pushing to GitHub (first time)
+
+If you cloned this repo and need to push to your own GitHub:
+
+1. On [GitHub](https://github.com/new), create a new repository named **ClipCraft** (same owner as your git user). Do **not** add a README, .gitignore, or license.
+2. Set the remote (replace `YOUR_USERNAME` with your GitHub username) and push:
+   ```bash
+   git remote add origin https://github.com/YOUR_USERNAME/ClipCraft.git
+   git push -u origin main
+   ```
+   If the remote is already set, just run: `git push -u origin main`.
