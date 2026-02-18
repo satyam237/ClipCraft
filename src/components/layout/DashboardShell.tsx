@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
@@ -24,11 +23,14 @@ function getInitials(email: string | undefined): string {
 export function DashboardShell({
   user,
   children,
+  workspaceLabel = "Personal",
+  memberCount = 1,
 }: {
   user: User;
   children: React.ReactNode;
+  workspaceLabel?: string;
+  memberCount?: number;
 }) {
-  const pathname = usePathname();
   const supabase = createClient();
 
   const handleSignOut = async () => {
@@ -41,7 +43,11 @@ export function DashboardShell({
 
   return (
     <div className="flex h-screen bg-background">
-      <Sidebar user={user} />
+      <Sidebar
+        user={user}
+        workspaceLabel={workspaceLabel}
+        memberCount={memberCount}
+      />
       <div className="flex flex-1 flex-col overflow-hidden">
         <header className="flex h-14 items-center gap-2 border-b border-(--border) px-6">
           <div className="flex-1" />

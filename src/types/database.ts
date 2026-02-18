@@ -43,6 +43,7 @@ export interface Database {
           display_name: string | null;
           avatar_url: string | null;
           plan: string | null;
+          preferences: Record<string, unknown> | null;
           created_at: string;
           updated_at: string;
         };
@@ -51,6 +52,7 @@ export interface Database {
           display_name?: string | null;
           avatar_url?: string | null;
           plan?: string | null;
+          preferences?: Record<string, unknown> | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -59,6 +61,7 @@ export interface Database {
           display_name?: string | null;
           avatar_url?: string | null;
           plan?: string | null;
+          preferences?: Record<string, unknown> | null;
           created_at?: string;
           updated_at?: string;
         };
