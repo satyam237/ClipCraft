@@ -38,17 +38,7 @@ export async function createWorkspace(
     .single();
   if (error) throw error;
   const workspace = data as WorkspaceRow;
-  const memberInsert = await (supabase.from("workspace_members") as any).insert({
-      workspace_id: workspace.id,
-      user_id: ownerId,
-      role: "owner",
-    });
-  if (
-    memberInsert.error &&
-    !/duplicate key value|already exists/i.test(memberInsert.error.message)
-  ) {
-    throw memberInsert.error;
-  }
+  // Owner is already added by DB trigger on_workspace_created
   return workspace;
 }
 

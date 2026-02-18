@@ -1,60 +1,79 @@
 # ClipCraft
 
-Video and clip management app built with Next.js and Supabase. Upload, organize, and share videos with workspace support, folders, and Supabase-backed auth and storage.
+**Professional screen recording and sharing — from your browser.**
 
-## Tech stack
+Record instantly. Share securely. Get transcripts, chapters, and AI summaries automatically.
 
-- **Next.js 16** (App Router), **React 19**
-- **Supabase** (auth, database, storage)
-- **Tailwind CSS 4**, Radix UI, Lucide icons
-- **Zustand**, Dexie (IndexedDB)
+---
 
-## Prerequisites
+## Try ClipCraft
 
-- Node.js 18+ (or 20+ recommended)
-- npm, yarn, or pnpm
-- A [Supabase](https://supabase.com) project
+**Product URL:** [https://clipcraft.app](https://clipcraft.app) *(update with your live URL)*
 
-## Setup
+---
 
-1. Clone the repo and install dependencies:
+## Demo
 
-   ```bash
-   git clone <repo-url>
-   cd ClipCraft
-   npm install
-   ```
+<!-- Replace the URL below with your demo video (e.g. YouTube/Vimeo embed or direct link) -->
+<!-- Option: use an image as placeholder until the video is ready: ![Demo](docs/demo-placeholder.png) -->
 
-2. Copy the env template and add your Supabase credentials:
+**Demo video** — *Coming soon. Add your demo link or embed here.*
 
-   ```bash
-   cp .env.example .env.local
-   ```
+| | |
+|---|---|
+| [▶ Watch demo](#) | *Replace with: YouTube link, Loom embed, or hosted video URL* |
 
-   Edit `.env.local` and set:
+---
 
-   - `NEXT_PUBLIC_SUPABASE_URL` – from Supabase: Project Settings → API → Project URL
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY` – from Supabase: Project Settings → API → anon public key
-   - `NEXT_PUBLIC_SITE_URL` – optional; defaults to current origin (e.g. `http://localhost:3000` for local dev)
+## What is ClipCraft?
 
-3. Apply the database schema in your Supabase project:
+ClipCraft is a **web-first** screen recording and sharing platform for creators, teams, and educators. One recording becomes:
 
-   - Run the SQL in `supabase/migrations/` via the Supabase Dashboard (SQL Editor) or using the [Supabase CLI](https://supabase.com/docs/guides/cli).
+- **Video** — MP4 and shareable link
+- **Chapters** — Clickable table of contents
+- **Transcript & captions** — Searchable, exportable
+- **AI summary** — Steps, key points, and descriptions
+- **Course-ready exports** — Notes, outlines, quiz suggestions
 
-## Running
+No desktop app. Record in the browser, share in seconds, and let ClipCraft handle the rest.
 
-- **Development:** `npm run dev` – app at [http://localhost:3000](http://localhost:3000)
-- **Production build:** `npm run build` then `npm run start`
-- **Lint:** `npm run lint`
+---
 
-## Pushing to GitHub (first time)
+## Features
 
-If you cloned this repo and need to push to your own GitHub:
+| Area | What you get |
+|------|----------------|
+| **Record & share** | Screen + webcam + mic in one click. Chunked, resumable uploads. Share link as soon as recording stops. |
+| **AI enhancements** | Auto transcript, captions (VTT/SRT), chapters, summary, step-by-step notes, and title/description suggestions. |
+| **Playback & sharing** | Player with speed control, transcript search, chapters sidebar. Privacy: public, unlisted, workspace-only, or password-protected. |
+| **Editing** | Trim, cut, crop, blur, captions edit. Export presets for YouTube, course, or internal use. |
+| **Course toolkit** | Lesson templates, objectives, quiz ideas, and export pack (MP4 + SRT + notes + chapters). |
+| **Team** | Workspaces, folders, roles (owner/admin/member/viewer), comments, and analytics. |
 
-1. On [GitHub](https://github.com/new), create a new repository named **ClipCraft** (same owner as your git user). Do **not** add a README, .gitignore, or license.
-2. Set the remote (replace `YOUR_USERNAME` with your GitHub username) and push:
-   ```bash
-   git remote add origin https://github.com/YOUR_USERNAME/ClipCraft.git
-   git push -u origin main
-   ```
-   If the remote is already set, just run: `git push -u origin main`.
+---
+
+## How to use it
+
+1. **Record** — Open ClipCraft, choose screen/window/tab, mic, and webcam. Hit record.
+2. **Upload** — Recording uploads when you stop (resumable if the connection drops).
+3. **Share** — Copy the share link. Viewers get the video plus transcript and chapters as they’re ready.
+4. **Enhance** — Edit trim/captions, use AI summary and chapters, export for course or social.
+
+---
+
+## Pricing
+
+| Plan | Best for | Highlights |
+|------|----------|------------|
+| **Free** | Getting started | Limited minutes/month, basic recording and share, transcript (watermark optional), limited exports. |
+| **Pro** | Creators | More minutes, chapters + summary, branding presets, course export pack, highlight reels. |
+| **Team** | Teams & orgs | Workspaces, roles, admin analytics, SSO and audit logs (roadmap). |
+
+*Exact limits and pricing TBD. Check the product site for current plans.*
+
+---
+
+## Tech (for contributors)
+
+Built with **Next.js 16**, **React 19**, **Supabase** (auth, DB, storage), **Tailwind CSS**, and **Zustand**.  
+For local setup and development, see [ClipCraft_PRD.md](ClipCraft_PRD.md) and the repo’s setup notes in the docs.

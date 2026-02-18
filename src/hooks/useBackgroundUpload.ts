@@ -98,9 +98,9 @@ export function useBackgroundUpload(
           .from("workspaces")
           .insert({ name: "My Workspace", owner_id: user.id })
           .select("id")
-          .single();
+          .maybeSingle();
 
-        if (createWorkspaceError || !createdWorkspace) {
+        if (createWorkspaceError || !createdWorkspace?.id) {
           if (!cancelled) {
             setError(
               `Create workspace: ${createWorkspaceError?.message ?? "Failed to create a workspace"}`
@@ -111,20 +111,7 @@ export function useBackgroundUpload(
           return;
         }
         workspaceId = createdWorkspace.id;
-
-        const { error: memberError } = await supabase.from("workspace_members").insert({
-          workspace_id: workspaceId,
-          user_id: user.id,
-          role: "owner",
-        });
-        if (memberError && !/duplicate key value|already exists/i.test(memberError.message)) {
-          if (!cancelled) {
-            setError(`Workspace member: ${memberError.message}`);
-            setStatus("error");
-            setCreatingPhase(null);
-          }
-          return;
-        }
+        // Owner is already added by DB trigger on_workspace_created; no need to insert into workspace_members.
       }
 
       if (!cancelled) setCreatingPhase("video");
@@ -139,9 +126,9 @@ export function useBackgroundUpload(
           visibility: "unlisted",
         })
         .select("id")
-        .single();
+        .maybeSingle();
 
-      if (videoError || !video) {
+      if (videoError || !video?.id) {
         if (!cancelled) {
           setError(`Create video: ${videoError?.message ?? "Failed to create video"}`);
           setStatus("error");
@@ -150,13 +137,14 @@ export function useBackgroundUpload(
         return;
       }
 
+      const createdVideoId = video.id;
       if (cancelled || !workspaceId) return;
-      setVideoId(video.id);
+      setVideoId(createdVideoId);
       setStatus("uploading");
       setCreatingPhase(null);
 
       try {
-        const { path } = await uploadRecording(sessionId, video.id, workspaceId, (p) => {
+        const { path } = await uploadRecording(sessionId, createdVideoId, workspaceId, (p) => {
           if (cancelled) return;
           setProgress(p.percent);
           setProgressInfo(p);
@@ -165,7 +153,7 @@ export function useBackgroundUpload(
         if (cancelled) return;
 
         const { error: assetError } = await supabase.from("video_assets").insert({
-          video_id: video.id,
+          video_id: createdVideoId,
           asset_type: "raw_webm",
           storage_path: path,
         });
@@ -174,8 +162,8 @@ export function useBackgroundUpload(
         }
 
         const { error: jobsError } = await supabase.from("processing_jobs").insert([
-          { video_id: video.id, job_type: "transcribe", status: "pending" },
-          { video_id: video.id, job_type: "thumbnail", status: "pending" },
+          { video_id: createdVideoId, job_type: "transcribe", status: "pending" },
+          { video_id: createdVideoId, job_type: "thumbnail", status: "pending" },
         ]);
         if (jobsError) {
           console.warn("Failed to create processing jobs:", jobsError);
@@ -184,7 +172,7 @@ export function useBackgroundUpload(
         const { error: videoUpdateError } = await supabase
           .from("videos")
           .update({ status: "processing" })
-          .eq("id", video.id);
+          .eq("id", createdVideoId);
         if (videoUpdateError) {
           throw new Error(`Failed to update video status: ${videoUpdateError.message}`);
         }
@@ -195,14 +183,14 @@ export function useBackgroundUpload(
         }
 
         supabase.functions
-          .invoke("transcribe", { body: { video_id: video.id } })
+          .invoke("transcribe", { body: { video_id: createdVideoId } })
           .then((result) => {
             if (result.error) {
               console.error("Transcribe function error:", result.error);
               supabase
                 .from("processing_jobs")
                 .update({ status: "failed", error_log: result.error.message })
-                .eq("video_id", video.id)
+                .eq("video_id", createdVideoId)
                 .eq("job_type", "transcribe")
                 .then();
             }
@@ -212,7 +200,7 @@ export function useBackgroundUpload(
             supabase
               .from("processing_jobs")
               .update({ status: "failed", error_log: err.message })
-              .eq("video_id", video.id)
+              .eq("video_id", createdVideoId)
               .eq("job_type", "transcribe")
               .then();
           });
@@ -222,7 +210,7 @@ export function useBackgroundUpload(
           setError(errorMessage.startsWith("Upload failed") ? errorMessage : `Upload failed: ${errorMessage}`);
           setStatus("error");
           console.error("Upload error:", err);
-          supabase.from("videos").update({ status: "failed" }).eq("id", video.id).then();
+          supabase.from("videos").update({ status: "failed" }).eq("id", createdVideoId).then();
         }
       }
     })();

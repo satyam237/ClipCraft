@@ -50,29 +50,12 @@ export function CreateWorkspaceModal({
       .single();
 
     if (workspaceError || !workspace) {
-      // #region agent log
-      fetch('http://127.0.0.1:7471/ingest/d49c29af-54e8-4fb9-820b-95829aad8cc5', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '70d4ca' }, body: JSON.stringify({ sessionId: '70d4ca', location: 'CreateWorkspaceModal.tsx:52', message: 'Workspace create error in modal', data: { code: workspaceError?.code, message: workspaceError?.message, hint: workspaceError?.hint, details: workspaceError?.details, hasWorkspace: !!workspace }, timestamp: Date.now(), runId: 'run1', hypothesisId: 'D' }) }).catch(() => { });
-      // #endregion
       setError(workspaceError?.message ?? "Failed to create workspace");
       setLoading(false);
       return;
     }
 
-    // Best-effort: older DB policies/triggers may not auto-create the owner membership row yet.
-    const { error: memberError } = await supabase.from("workspace_members").insert({
-      workspace_id: workspace.id,
-      user_id: user.id,
-      role: "owner",
-    });
-    if (memberError && !/duplicate key value|already exists/i.test(memberError.message)) {
-      // #region agent log
-      fetch('http://127.0.0.1:7471/ingest/d49c29af-54e8-4fb9-820b-95829aad8cc5', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '70d4ca' }, body: JSON.stringify({ sessionId: '70d4ca', location: 'CreateWorkspaceModal.tsx:64', message: 'Workspace member insert error in modal', data: { code: memberError.code, message: memberError.message, hint: memberError.hint, details: memberError.details, workspaceId: workspace.id, userId: user.id }, timestamp: Date.now(), runId: 'run1', hypothesisId: 'C' }) }).catch(() => { });
-      // #endregion
-      setError(memberError.message);
-      setLoading(false);
-      return;
-    }
-
+    // Owner is already added by DB trigger on_workspace_created
     setOpen(false);
     setName("");
     setLoading(false);
