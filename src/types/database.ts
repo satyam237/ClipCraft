@@ -10,7 +10,7 @@ export type WorkspaceRole = "owner" | "admin" | "member" | "viewer";
 
 export type VideoStatus = "uploading" | "processing" | "ready" | "failed";
 
-export type VideoVisibility = "public" | "unlisted" | "workspace" | "password";
+export type VideoVisibility = "public" | "unlisted" | "workspace" | "password" | "restricted";
 
 export type VideoAssetType =
   | "raw_webm"
@@ -134,6 +134,7 @@ export interface Database {
           status: VideoStatus;
           duration: number | null;
           visibility: VideoVisibility;
+          allow_download: boolean;
           password_hash: string | null;
           thumbnail_url: string | null;
           created_at: string;
@@ -149,6 +150,7 @@ export interface Database {
           status?: VideoStatus;
           duration?: number | null;
           visibility?: VideoVisibility;
+          allow_download?: boolean;
           password_hash?: string | null;
           thumbnail_url?: string | null;
           created_at?: string;
@@ -160,10 +162,29 @@ export interface Database {
           status?: VideoStatus;
           duration?: number | null;
           visibility?: VideoVisibility;
+          allow_download?: boolean;
           password_hash?: string | null;
           thumbnail_url?: string | null;
           folder_id?: string | null;
           updated_at?: string;
+        };
+      };
+      video_invitees: {
+        Row: {
+          id: string;
+          video_id: string;
+          email: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          video_id: string;
+          email: string;
+          created_at?: string;
+        };
+        Update: {
+          video_id?: string;
+          email?: string;
         };
       };
       video_assets: {

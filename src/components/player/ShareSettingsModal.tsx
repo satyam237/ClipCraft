@@ -178,7 +178,7 @@ export function ShareSettingsModal({
           <div className="space-y-2">
             <Label>Who has access</Label>
             <select
-              className="w-full rounded-md border border-[var(--input)] bg-transparent px-3 py-2 text-sm"
+              className="w-full rounded-md border border-(--input) bg-transparent px-3 py-2 text-sm"
               value={currentShareOption()}
               onChange={(e) => setShareOption(e.target.value as ShareOption)}
             >

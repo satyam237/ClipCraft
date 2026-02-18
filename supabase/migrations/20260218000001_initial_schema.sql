@@ -13,16 +13,50 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- ENUMS
 -- ============================================================================
 
-CREATE TYPE workspace_role AS ENUM ('owner', 'admin', 'member', 'viewer');
-CREATE TYPE video_status AS ENUM ('uploading', 'processing', 'ready', 'failed');
-CREATE TYPE video_visibility AS ENUM ('public', 'unlisted', 'workspace', 'password');
-CREATE TYPE video_asset_type AS ENUM (
-  'raw_webm', 'mp4', 'hls', 'thumbnail', 'srt', 'vtt',
-  'transcript_json', 'summary_md', 'chapters_json', 'highlights_mp4'
-);
-CREATE TYPE analytics_event_type AS ENUM ('view', 'play', 'pause', 'seek', 'complete');
-CREATE TYPE processing_job_type AS ENUM ('transcode', 'transcribe', 'thumbnail');
-CREATE TYPE processing_job_status AS ENUM ('pending', 'running', 'completed', 'failed');
+DO $$ BEGIN
+  CREATE TYPE workspace_role AS ENUM ('owner', 'admin', 'member', 'viewer');
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+  CREATE TYPE video_status AS ENUM ('uploading', 'processing', 'ready', 'failed');
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+  CREATE TYPE video_visibility AS ENUM ('public', 'unlisted', 'workspace', 'password');
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+  CREATE TYPE video_asset_type AS ENUM (
+    'raw_webm', 'mp4', 'hls', 'thumbnail', 'srt', 'vtt',
+    'transcript_json', 'summary_md', 'chapters_json', 'highlights_mp4'
+  );
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+  CREATE TYPE analytics_event_type AS ENUM ('view', 'play', 'pause', 'seek', 'complete');
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+  CREATE TYPE processing_job_type AS ENUM ('transcode', 'transcribe', 'thumbnail');
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+  CREATE TYPE processing_job_status AS ENUM ('pending', 'running', 'completed', 'failed');
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
 
 -- ============================================================================
 -- TABLES

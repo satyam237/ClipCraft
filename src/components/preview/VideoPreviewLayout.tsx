@@ -160,7 +160,13 @@ export function VideoPreviewLayout({
 
       {/* Reactions + Comment button */}
       <div className="flex flex-wrap items-center gap-3">
-        {videoId && <ReactionBar videoId={videoId} />}
+        {videoId ? (
+          <ReactionBar videoId={videoId} />
+        ) : (uploadStatus === "creating" || uploadStatus === "uploading") ? (
+          <p className="text-sm text-(--muted-foreground)">
+            Reactions and comments will appear once the video is saved.
+          </p>
+        ) : null}
         <Button variant="outline" size="sm" onClick={scrollToComments}>
           <MessageSquare className="mr-1.5 h-4 w-4" />
           Comment
