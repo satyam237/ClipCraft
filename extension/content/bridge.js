@@ -6,6 +6,8 @@
 
 (function () {
   const CLIPCRAFT_FROM_PAGE = "clipcraft-from-page";
+  const DEBUG = false;
+  if (DEBUG) console.log("[ClipCraft Bridge] loaded", { runtimeId: chrome?.runtime?.id ?? null });
 
   window.addEventListener("message", (event) => {
     if (event.source !== window) return;
@@ -17,11 +19,33 @@
 
     // Only forward start/stop/state messages (no frame data)
     if (kind === "recording-started" || kind === "recording-stopped" || kind === "recording-state") {
-      chrome.runtime.sendMessage({
-        source: "clipcraft-page",
-        kind,
-        payload: rest,
-      });
+      if (DEBUG && kind === "recording-started") {
+        console.log("[ClipCraft Bridge] got recording-started from page");
+      }
+      if (!chrome?.runtime?.id) {
+        // Extension context is unavailable (e.g. during reload/disable).
+        return;
+      }
+      try {
+        chrome.runtime.sendMessage(
+          {
+            source: "clipcraft-page",
+            kind,
+            payload: rest,
+          },
+          () => {
+            // Avoid noisy console warnings when the background isn't ready (reload, update, etc.)
+            const err = chrome.runtime.lastError;
+            if (DEBUG && err && err.message && !err.message.includes("Receiving end does not exist")) {
+              console.debug("[ClipCraft Bridge] sendMessage lastError:", err.message);
+            }
+          }
+        );
+      } catch (_e) {
+        // Can happen if the extension was reloaded while this content script is still running:
+        // "Uncaught Error: Extension context invalidated."
+        if (DEBUG) console.debug("[ClipCraft Bridge] Extension context invalidated while sending", kind);
+      }
     }
   });
 

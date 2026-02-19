@@ -34,6 +34,10 @@ function notifyExtension(
   }
 ) {
   if (typeof window === "undefined") return;
+  const DEBUG_EXTENSION_BRIDGE = false;
+  if (DEBUG_EXTENSION_BRIDGE && kind === "recording-started") {
+    console.debug("[ClipCraft] notifyExtension recording-started", payload);
+  }
   window.postMessage(
     { type: "clipcraft-from-page", payload: { kind, ...payload } },
     "*"

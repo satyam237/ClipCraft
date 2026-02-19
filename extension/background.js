@@ -6,6 +6,9 @@
 const CLIPCRAFT_OVERLAY_SCRIPT = "content/overlay.js";
 const OFFSCREEN_DOCUMENT_PATH = "offscreen.html";
 
+const DEBUG = false;
+if (DEBUG) console.log("[ClipCraft Background] Service worker loaded");
+
 let recordTabId = null;
 let recordingState = {
   elapsedMs: 0,
@@ -91,6 +94,7 @@ async function sendToOffscreen(message) {
 
 async function injectOverlayIntoTab(tabId, options = {}) {
   try {
+    if (DEBUG) console.log("[ClipCraft Background] injectOverlayIntoTab", tabId);
     await chrome.scripting.executeScript({
       target: { tabId },
       files: [CLIPCRAFT_OVERLAY_SCRIPT],
@@ -132,6 +136,7 @@ function removeOverlayFromTab(tabId) {
 
 async function injectOverlayIntoAllTabs(options = {}) {
   const tabs = await chrome.tabs.query({});
+  if (DEBUG) console.log("[ClipCraft Background] injectOverlayIntoAllTabs tabs:", tabs.length);
   for (const tab of tabs) {
     if (tab.id === recordTabId) continue;
     if (tab.id && tab.url && !tab.url.startsWith("chrome://") && !tab.url.startsWith("edge://")) {
@@ -187,6 +192,7 @@ chrome.runtime.onConnect.addListener((port) => {
     if (tabId != null) {
       overlayTabIds.add(tabId);
     }
+    if (DEBUG) console.log("[ClipCraft Background] overlay port connected", tabId);
 
     // If background has no active recording but an overlay connects,
     // immediately tell it to hide to avoid ghost overlays after restart.
@@ -212,6 +218,7 @@ chrome.runtime.onConnect.addListener((port) => {
       if (tabId != null) {
         overlayTabIds.delete(tabId);
       }
+      if (DEBUG) console.log("[ClipCraft Background] overlay port disconnected", tabId);
     });
   }
   
@@ -239,7 +246,10 @@ chrome.runtime.onConnect.addListener((port) => {
             "tabs"
           );
         }
-        broadcastToAllTabs({ type: "clipcraft-overlay-frame", payload: { dataUrl: message.dataUrl } });
+        broadcastToAllTabs({
+          type: "clipcraft-overlay-frame",
+          payload: { dataUrl: message.dataUrl },
+        });
       } else if (message.type === "capture-error") {
         console.error("[ClipCraft Background] Offscreen capture error:", message.error);
         broadcastToAllTabs({ type: "clipcraft-overlay-error", payload: { error: message.error } });
@@ -255,6 +265,11 @@ chrome.runtime.onConnect.addListener((port) => {
 
 // Handle messages from content scripts and pages
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message?.source === "clipcraft-page" && message?.kind) {
+    if (DEBUG) {
+      console.log("[ClipCraft Background] From page:", message.kind, "tab:", sender?.tab?.id ?? null);
+    }
+  }
   // Handle popup state requests
   if (message.type === "popup-get-state") {
     sendResponse({
@@ -286,6 +301,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   if (kind === "recording-started") {
     recordTabId = sender.tab?.id ?? null;
+    if (DEBUG) console.log("[ClipCraft Background] recording-started set recordTabId:", recordTabId);
     recordingState = {
       elapsedMs: payload?.elapsedMs ?? 0,
       isPaused: payload?.isPaused ?? false,
@@ -318,7 +334,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       },
     }).catch(() => {});
     
-    injectOverlayIntoAllTabs(recordingState).then(() => sendResponse({ ok: true }));
+    injectOverlayIntoAllTabs(recordingState).then(() => {
+      if (DEBUG) console.log("[ClipCraft Background] injectOverlayIntoAllTabs done");
+      sendResponse({ ok: true });
+    });
     return true;
   }
 

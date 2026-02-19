@@ -8,6 +8,9 @@
   if (window.__clipcraftOverlayLoaded) return;
   window.__clipcraftOverlayLoaded = true;
 
+  const DEBUG = false;
+  if (DEBUG) console.log("[ClipCraft Overlay] loaded");
+
   // Embedded CSS for Shadow DOM
   const OVERLAY_CSS = `
     .clipcraft-overlay-root {
@@ -188,7 +191,12 @@
   // Camera bubble state
   let cameraMode = "camera"; // "camera" | "profile" | "hidden"
   let cameraSize = "medium"; // "small" | "medium" | "large"
-  const SIZES = { small: 120, medium: 180, large: 240 };
+  // Slightly larger so it more closely matches the in-app preview.
+  const SIZES = { small: 160, medium: 240, large: 320 };
+  let cameraWrap = null;
+  let cameraProfileIcon = null;
+
+  const DPR = window.devicePixelRatio || 1;
 
   // Canvas rendering state
   let cameraCanvas = null;
@@ -257,6 +265,29 @@
     bar.appendChild(stopBtn);
     bar.appendChild(restartBtn);
 
+    // Toggle camera bubble visibility (hide/show) from the sidebar.
+    var camToggleBtn = document.createElement("button");
+    camToggleBtn.className = "clipcraft-btn";
+    camToggleBtn.textContent = "Cam";
+    camToggleBtn.title = "Hide camera";
+    camToggleBtn.addEventListener("click", function () {
+      if (!cameraWrap) return;
+      if (cameraMode === "hidden") {
+        // Show bubble again in camera mode.
+        cameraMode = "camera";
+        cameraWrap.style.display = "block";
+        if (cameraCanvas) cameraCanvas.classList.remove("hidden");
+        if (cameraProfileIcon) cameraProfileIcon.style.display = "none";
+        camToggleBtn.title = "Hide camera";
+      } else {
+        // Hide bubble entirely.
+        cameraMode = "hidden";
+        cameraWrap.style.display = "none";
+        camToggleBtn.title = "Show camera";
+      }
+    });
+    bar.appendChild(camToggleBtn);
+
     function update() {
       timer.textContent = "\u25CF " + formatTime(state.elapsedMs);
       pauseResume.title = state.isPaused ? "Resume" : "Pause";
@@ -270,16 +301,17 @@
   function buildCameraBubble() {
     var wrap = document.createElement("div");
     wrap.className = "clipcraft-camera-wrap";
+    cameraWrap = wrap;
 
     // Canvas for smooth rendering
     cameraCanvas = document.createElement("canvas");
     cameraCanvas.className = "clipcraft-camera-canvas";
     cameraCtx = cameraCanvas.getContext("2d", { willReadFrequently: false });
     
-    // Set canvas size before appending
+    // Set canvas pixel size before appending (HiDPI-aware)
     var px = SIZES[cameraSize] || SIZES.medium;
-    cameraCanvas.width = px;
-    cameraCanvas.height = px;
+    cameraCanvas.width = px * DPR;
+    cameraCanvas.height = px * DPR;
     
     wrap.appendChild(cameraCanvas);
     
@@ -292,6 +324,7 @@
     profileIcon.innerHTML = personSvg;
     profileIcon.style.display = "none";
     wrap.appendChild(profileIcon);
+    cameraProfileIcon = profileIcon;
 
     // Hover menu
     var menu = document.createElement("div");
@@ -349,28 +382,54 @@
 
     wrap.appendChild(menu);
 
-    // ---- Dragging ----
+    // ---- Dragging (pointer events + rAF for smoothness) ----
     var dragState = null;
-    wrap.addEventListener("mousedown", function (e) {
+    var pendingPos = null;
+    var rafId = null;
+
+    function applyPendingPos() {
+      rafId = null;
+      if (!pendingPos) return;
+      wrap.style.left = pendingPos.left + "px";
+      wrap.style.top = pendingPos.top + "px";
+      wrap.style.bottom = "auto";
+      pendingPos = null;
+    }
+
+    wrap.addEventListener("pointerdown", function (e) {
       if (e.target.closest(".clipcraft-camera-menu")) return;
       var rect = wrap.getBoundingClientRect();
-      dragState = { startX: e.clientX, startY: e.clientY, origLeft: rect.left, origTop: rect.top };
+      dragState = { pointerId: e.pointerId, startX: e.clientX, startY: e.clientY, origLeft: rect.left, origTop: rect.top };
+      try {
+        wrap.setPointerCapture(e.pointerId);
+      } catch (_e) {}
       e.preventDefault();
     });
-    document.addEventListener("mousemove", function (e) {
-      if (!dragState) return;
+
+    wrap.addEventListener("pointermove", function (e) {
+      if (!dragState || e.pointerId !== dragState.pointerId) return;
       var dx = e.clientX - dragState.startX;
       var dy = e.clientY - dragState.startY;
       var size = wrap.offsetWidth;
       var newLeft = Math.max(0, Math.min(window.innerWidth - size, dragState.origLeft + dx));
       var newTop = Math.max(0, Math.min(window.innerHeight - size, dragState.origTop + dy));
-      wrap.style.left = newLeft + "px";
-      wrap.style.top = newTop + "px";
-      wrap.style.bottom = "auto";
+      pendingPos = { left: newLeft, top: newTop };
+      if (!rafId) rafId = requestAnimationFrame(applyPendingPos);
     });
-    document.addEventListener("mouseup", function () {
+
+    function endDrag(e) {
+      if (!dragState) return;
+      if (e && dragState.pointerId != null && e.pointerId !== dragState.pointerId) return;
       dragState = null;
-    });
+      pendingPos = null;
+      if (rafId) {
+        cancelAnimationFrame(rafId);
+        rafId = null;
+      }
+    }
+
+    wrap.addEventListener("pointerup", endDrag);
+    wrap.addEventListener("pointercancel", endDrag);
 
     return { el: wrap, profileIcon: profileIcon };
   }
@@ -380,8 +439,8 @@
     wrap.style.width = px + "px";
     wrap.style.height = px + "px";
     if (cameraCanvas) {
-      cameraCanvas.width = px;
-      cameraCanvas.height = px;
+      cameraCanvas.width = px * DPR;
+      cameraCanvas.height = px * DPR;
     }
   }
 
@@ -415,8 +474,8 @@
       // Ensure canvas has valid dimensions
       if (cameraCanvas.width === 0 || cameraCanvas.height === 0) {
         const px = SIZES[cameraSize] || SIZES.medium;
-        cameraCanvas.width = px;
-        cameraCanvas.height = px;
+        cameraCanvas.width = px * DPR;
+        cameraCanvas.height = px * DPR;
       }
 
       // Draw to canvas
@@ -446,7 +505,12 @@
       if (!window._frameCount) window._frameCount = 0;
       window._frameCount++;
       if (window._frameCount <= 3) {
-        console.log("[ClipCraft Overlay] Received frame", window._frameCount, "size:", message.payload?.dataUrl?.length || 0);
+        console.log(
+          "[ClipCraft Overlay] Received frame",
+          window._frameCount,
+          "size:",
+          message.payload?.dataUrl?.length || 0
+        );
       }
       updateFrame(message.payload ? message.payload.dataUrl : null);
     } else if (message.type === "clipcraft-overlay-error") {
@@ -495,9 +559,14 @@
       cameraCtx.fillStyle = "#333";
       cameraCtx.fillRect(0, 0, cameraCanvas.width, cameraCanvas.height);
       cameraCtx.fillStyle = "#666";
-      cameraCtx.font = "12px sans-serif";
+      cameraCtx.font = `${12 * DPR}px sans-serif`;
       cameraCtx.textAlign = "center";
-      cameraCtx.fillText("Waiting for camera...", cameraCanvas.width / 2, cameraCanvas.height / 2);
+      cameraCtx.textBaseline = "middle";
+      cameraCtx.fillText(
+        "Waiting for camera...",
+        cameraCanvas.width / 2,
+        cameraCanvas.height / 2
+      );
     }
     
     console.log("[ClipCraft Overlay] Overlay shown, canvas:", {

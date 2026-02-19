@@ -6,7 +6,9 @@
 
 const TARGET_FPS = 20;
 const FRAME_INTERVAL_MS = 1000 / TARGET_FPS;
-const TARGET_RESOLUTION = 480; // 480x480 for high quality
+// Higher quality output resolution for overlays.
+// 720x720 is a good balance of sharpness vs bandwidth/CPU.
+const TARGET_RESOLUTION = 720; // 720x720 square
 
 let video = null;
 let stream = null;
@@ -48,11 +50,23 @@ async function startCapture(deviceId) {
     // Get user media with specified device
     const constraints = {
       video: deviceId
-        ? { deviceId: { exact: deviceId }, width: { ideal: TARGET_RESOLUTION }, height: { ideal: TARGET_RESOLUTION } }
-        : { width: { ideal: TARGET_RESOLUTION }, height: { ideal: TARGET_RESOLUTION } },
+        ? {
+            deviceId: { exact: deviceId },
+            width: { ideal: TARGET_RESOLUTION },
+            height: { ideal: TARGET_RESOLUTION },
+            frameRate: { ideal: 30, max: 30 },
+          }
+        : {
+            width: { ideal: TARGET_RESOLUTION },
+            height: { ideal: TARGET_RESOLUTION },
+            frameRate: { ideal: 30, max: 30 },
+          },
     };
 
-    console.log("[ClipCraft Offscreen] Requesting getUserMedia with constraints:", JSON.stringify(constraints));
+    console.log(
+      "[ClipCraft Offscreen] Requesting getUserMedia with constraints:",
+      JSON.stringify(constraints)
+    );
     stream = await navigator.mediaDevices.getUserMedia(constraints);
     console.log("[ClipCraft Offscreen] Got media stream:", stream.id, "tracks:", stream.getVideoTracks().length);
     
@@ -129,8 +143,10 @@ function startIntervalCapture() {
         }
         let blob;
         try {
+          // WebP for smaller, good-quality frames
           blob = await canvas.convertToBlob({ type: "image/webp", quality: 0.9 });
         } catch {
+          // Fallback to JPEG if WebP is unavailable
           blob = await canvas.convertToBlob({ type: "image/jpeg", quality: 0.92 });
         }
 
