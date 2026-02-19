@@ -30,15 +30,20 @@ interface RecorderState {
   reset: () => void;
 }
 
+// Check if Document Picture-in-Picture is supported (only in browser)
+const isPiPSupported =
+  typeof window !== "undefined" && "documentPictureInPicture" in window;
+
 const defaultConfig: RecorderConfig = {
   captureSource: "screen",
   webcamEnabled: true,
-  webcamPosition: "bottom-right",
+  webcamPosition: "bottom-left",
   webcamShape: "circle",
   micEnabled: true,
   quality: "1080p",
   videoDeviceId: null,
   audioDeviceId: null,
+  usePiPWindow: false,
 };
 
 export const useRecorderStore = create<RecorderState>((set) => ({

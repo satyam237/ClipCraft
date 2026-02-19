@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
@@ -32,6 +33,11 @@ export function DashboardShell({
   memberCount?: number;
 }) {
   const supabase = createClient();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -56,10 +62,13 @@ export function DashboardShell({
             <DropdownMenuTrigger asChild>
               <button
                 type="button"
+                suppressHydrationWarning
                 className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-(--border) bg-(--muted) text-sm font-medium text-foreground ring-offset-background focus:outline-none focus:ring-2 focus:ring-(--ring) focus:ring-offset-2"
                 aria-label="Open user menu"
               >
-                {avatarUrl ? (
+                {!mounted ? (
+                  <span className="invisible">?</span>
+                ) : avatarUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={avatarUrl}

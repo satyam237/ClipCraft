@@ -35,6 +35,7 @@ export function useBackgroundUpload(
   const [error, setError] = useState<string | null>(null);
   const startedRef = useRef(false);
   const lastRetryKeyRef = useRef<number | undefined>(undefined);
+  const isMountedRef = useRef(true);
 
   useEffect(() => {
     if (!sessionId) return;
@@ -47,107 +48,134 @@ export function useBackgroundUpload(
     if (startedRef.current) return;
 
     let cancelled = false;
+    isMountedRef.current = true;
     startedRef.current = true;
-    setError(null);
-    setStatus("creating");
-    setCreatingPhase("workspace");
+    if (isMountedRef.current) {
+      setError(null);
+      setStatus("creating");
+      setCreatingPhase("workspace");
+    }
 
     (async () => {
       const supabase = createClient();
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
+      let createdVideoId: string | undefined;
 
-      if (userError) {
-        if (!cancelled) {
-          setError(`Sign-in error: ${userError.message}`);
-          setStatus("error");
-          setCreatingPhase(null);
-        }
-        return;
-      }
-      if (!user) {
-        if (!cancelled) {
-          setError("You must be signed in to save this recording.");
-          setStatus("error");
-          setCreatingPhase(null);
-        }
-        return;
-      }
+      try {
+        const {
+          data: { user },
+          error: userError,
+        } = await supabase.auth.getUser();
 
-      let workspaceId: string | undefined;
-      const { data: workspaces, error: workspaceListError } = await supabase
-        .from("workspaces")
-        .select("id")
-        .order("created_at", { ascending: false })
-        .limit(1);
-
-      if (workspaceListError) {
-        if (!cancelled) {
-          setError(`Workspace list: ${workspaceListError.message}`);
-          setStatus("error");
-          setCreatingPhase(null);
-        }
-        return;
-      }
-
-      workspaceId = workspaces?.[0]?.id;
-      if (!workspaceId) {
-        const { data: createdWorkspace, error: createWorkspaceError } = await supabase
-          .from("workspaces")
-          .insert({ name: "My Workspace", owner_id: user.id })
-          .select("id")
-          .maybeSingle();
-
-        if (createWorkspaceError || !createdWorkspace?.id) {
-          if (!cancelled) {
-            setError(
-              `Create workspace: ${createWorkspaceError?.message ?? "Failed to create a workspace"}`
-            );
+        if (userError) {
+          if (isMountedRef.current && !cancelled) {
+            setError(`Sign-in error: ${userError.message}`);
             setStatus("error");
             setCreatingPhase(null);
           }
           return;
         }
-        workspaceId = createdWorkspace.id;
-        // Owner is already added by DB trigger on_workspace_created; no need to insert into workspace_members.
-      }
+        if (!user) {
+          if (isMountedRef.current && !cancelled) {
+            setError("You must be signed in to save this recording.");
+            setStatus("error");
+            setCreatingPhase(null);
+          }
+          return;
+        }
 
-      if (!cancelled) setCreatingPhase("video");
+        let workspaceId: string | undefined;
 
-      const { data: video, error: videoError } = await supabase
-        .from("videos")
-        .insert({
-          workspace_id: workspaceId,
-          owner_id: user.id,
-          title: "Recording",
-          status: "uploading",
-          visibility: "unlisted",
-        })
-        .select("id")
-        .maybeSingle();
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("preferences")
+          .eq("id", user.id)
+          .maybeSingle();
 
-      if (videoError || !video?.id) {
-        if (!cancelled) {
-          setError(`Create video: ${videoError?.message ?? "Failed to create video"}`);
-          setStatus("error");
+        const prefs = (profile?.preferences as { default_workspace_id?: string | null }) ?? {};
+        if (prefs.default_workspace_id && typeof prefs.default_workspace_id === "string") {
+          const { data: defaultWs } = await supabase
+            .from("workspaces")
+            .select("id")
+            .eq("id", prefs.default_workspace_id)
+            .maybeSingle();
+          if (defaultWs?.id) workspaceId = defaultWs.id;
+        }
+
+        if (!workspaceId) {
+          const { data: workspaces, error: workspaceListError } = await supabase
+            .from("workspaces")
+            .select("id")
+            .order("created_at", { ascending: false })
+            .limit(1);
+
+          if (workspaceListError) {
+            if (isMountedRef.current && !cancelled) {
+              setError(`Workspace list: ${workspaceListError.message}`);
+              setStatus("error");
+              setCreatingPhase(null);
+            }
+            return;
+          }
+
+          workspaceId = workspaces?.[0]?.id;
+          if (!workspaceId) {
+            const { data: createdWorkspace, error: createWorkspaceError } = await supabase
+              .from("workspaces")
+              .insert({ name: "My Workspace", owner_id: user.id })
+              .select("id")
+              .maybeSingle();
+
+            if (createWorkspaceError || !createdWorkspace?.id) {
+              if (isMountedRef.current && !cancelled) {
+                setError(
+                  `Create workspace: ${createWorkspaceError?.message ?? "Failed to create a workspace"}`
+                );
+                setStatus("error");
+                setCreatingPhase(null);
+              }
+              return;
+            }
+            workspaceId = createdWorkspace.id;
+          }
+        }
+
+        if (isMountedRef.current && !cancelled) setCreatingPhase("video");
+
+        const { data: video, error: videoError } = await supabase
+          .from("videos")
+          .insert({
+            workspace_id: workspaceId,
+            owner_id: user.id,
+            title: "Recording",
+            status: "uploading",
+            visibility: "unlisted",
+          })
+          .select("id")
+          .maybeSingle();
+
+        if (videoError || !video?.id) {
+          if (isMountedRef.current && !cancelled) {
+            setError(`Create video: ${videoError?.message ?? "Failed to create video"}`);
+            setStatus("error");
+            setCreatingPhase(null);
+          }
+          return;
+        }
+
+        createdVideoId = video.id;
+        if (cancelled || !workspaceId) return;
+        if (isMountedRef.current && !cancelled) {
+          setVideoId(createdVideoId);
+          setStatus("uploading");
           setCreatingPhase(null);
         }
-        return;
-      }
 
-      const createdVideoId = video.id;
-      if (cancelled || !workspaceId) return;
-      setVideoId(createdVideoId);
-      setStatus("uploading");
-      setCreatingPhase(null);
-
-      try {
         const { path } = await uploadRecording(sessionId, createdVideoId, workspaceId, (p) => {
           if (cancelled) return;
-          setProgress(p.percent);
-          setProgressInfo(p);
+          if (isMountedRef.current) {
+            setProgress(p.percent);
+            setProgressInfo(p);
+          }
         });
 
         if (cancelled) return;
@@ -177,12 +205,11 @@ export function useBackgroundUpload(
           throw new Error(`Failed to update video status: ${videoUpdateError.message}`);
         }
 
-        if (!cancelled) {
+        if (isMountedRef.current) {
           setProgress(100);
           setStatus("done");
         }
 
-        // Best-effort: start transcription via Edge Function (may not be deployed)
         supabase.functions
           .invoke("transcribe", { body: { video_id: createdVideoId } })
           .then((result) => {
@@ -204,18 +231,26 @@ export function useBackgroundUpload(
               .then();
           });
       } catch (err) {
-        if (!cancelled) {
+        if (isMountedRef.current && !cancelled) {
           const errorMessage = err instanceof Error ? err.message : String(err);
-          setError(errorMessage.startsWith("Upload failed") ? errorMessage : `Upload failed: ${errorMessage}`);
+          setError(
+            errorMessage.includes("Refresh Token") || errorMessage.includes("refresh_token")
+              ? "Your session expired. Please sign in again to save."
+              : errorMessage
+          );
           setStatus("error");
-          console.error("Upload error:", err);
-          supabase.from("videos").update({ status: "failed" }).eq("id", createdVideoId).then();
+          setCreatingPhase(null);
+          console.error("Save recording error:", err);
+          if (createdVideoId) {
+            supabase.from("videos").update({ status: "failed" }).eq("id", createdVideoId).then();
+          }
         }
       }
     })();
 
     return () => {
       cancelled = true;
+      isMountedRef.current = false;
     };
   }, [sessionId, retryKey]);
 

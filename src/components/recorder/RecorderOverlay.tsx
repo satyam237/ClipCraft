@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Pause, Square, Play } from "lucide-react";
+import { Pause, Square, Play, RotateCcw } from "lucide-react";
 import { useRecorderStore } from "@/stores/recorder-store";
 
 function formatTime(ms: number): string {
@@ -17,11 +17,13 @@ function formatTime(ms: number): string {
 
 export function RecorderOverlay({
   onStop,
+  onRestart,
   isPaused,
   onPause,
   onResume,
 }: {
   onStop: () => void;
+  onRestart: () => void;
   isPaused: boolean;
   onPause: () => void;
   onResume: () => void;
@@ -41,21 +43,24 @@ export function RecorderOverlay({
   }, [startTime, pausedDurationMs, isPaused, pauseStart]);
 
   return (
-    <div className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2 rounded-full border border-(--border) bg-(--card) px-4 py-2 shadow-lg">
-      <span className="min-w-16 font-mono text-sm tabular-nums text-red-500">
+    <div className="fixed left-4 top-1/2 z-50 flex -translate-y-1/2 flex-col gap-2 rounded-lg border border-(--border) bg-(--card) px-3 py-2 shadow-lg">
+      <span className="min-w-14 text-center font-mono text-sm tabular-nums text-red-500">
         ● {formatTime(elapsed)}
       </span>
       {isPaused ? (
-        <Button size="icon" variant="outline" onClick={onResume}>
+        <Button size="icon" variant="outline" onClick={onResume} title="Resume">
           <Play className="h-4 w-4" />
         </Button>
       ) : (
-        <Button size="icon" variant="outline" onClick={onPause}>
+        <Button size="icon" variant="outline" onClick={onPause} title="Pause">
           <Pause className="h-4 w-4" />
         </Button>
       )}
-      <Button size="icon" variant="destructive" onClick={onStop}>
+      <Button size="icon" variant="destructive" onClick={onStop} title="Stop">
         <Square className="h-4 w-4" />
+      </Button>
+      <Button size="icon" variant="outline" onClick={onRestart} title="Restart">
+        <RotateCcw className="h-4 w-4" />
       </Button>
     </div>
   );

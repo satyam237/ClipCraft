@@ -4,10 +4,8 @@ import { Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import type { UploadStatus, CreatingPhase } from "@/hooks/useBackgroundUpload";
 import type { UploadProgress } from "@/lib/upload/chunked-upload";
 
-function creatingLabel(phase: CreatingPhase): string {
-  if (phase === "workspace") return "Creating workspace…";
-  if (phase === "video") return "Creating video…";
-  return "Preparing…";
+function creatingLabel(_phase: CreatingPhase): string {
+  return "Saving to library…";
 }
 
 export function UploadStatusBadge({

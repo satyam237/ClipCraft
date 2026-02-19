@@ -9,18 +9,29 @@ interface TranscribePayload {
   video_id: string;
 }
 
+// CORS headers
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
 Deno.serve(async (req: Request) => {
+  // Handle CORS preflight
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
+
   if (req.method !== "POST") {
     return new Response(JSON.stringify({ error: "Method not allowed" }), {
       status: 405,
-      headers: { "Content-Type": "application/json" },
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 
   if (!OPENAI_API_KEY || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
     return new Response(
       JSON.stringify({ error: "Missing env: OPENAI_API_KEY or Supabase keys" }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 
@@ -30,7 +41,7 @@ Deno.serve(async (req: Request) => {
   } catch {
     return new Response(JSON.stringify({ error: "Invalid JSON" }), {
       status: 400,
-      headers: { "Content-Type": "application/json" },
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 
@@ -38,7 +49,7 @@ Deno.serve(async (req: Request) => {
   if (!video_id) {
     return new Response(JSON.stringify({ error: "video_id required" }), {
       status: 400,
-      headers: { "Content-Type": "application/json" },
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 
@@ -55,7 +66,7 @@ Deno.serve(async (req: Request) => {
   if (!path) {
     return new Response(JSON.stringify({ error: "No video asset" }), {
       status: 404,
-      headers: { "Content-Type": "application/json" },
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 
@@ -63,7 +74,7 @@ Deno.serve(async (req: Request) => {
   if (!fileData) {
     return new Response(JSON.stringify({ error: "Could not download file" }), {
       status: 500,
-      headers: { "Content-Type": "application/json" },
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 
@@ -81,7 +92,7 @@ Deno.serve(async (req: Request) => {
     const errText = await openaiRes.text();
     return new Response(
       JSON.stringify({ error: "Whisper failed", detail: errText }),
-      { status: 502, headers: { "Content-Type": "application/json" } }
+      { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 
@@ -141,7 +152,7 @@ Deno.serve(async (req: Request) => {
 
   return new Response(
     JSON.stringify({ ok: true, text: text.slice(0, 200) }),
-    { headers: { "Content-Type": "application/json" } }
+    { headers: { ...corsHeaders, "Content-Type": "application/json" } }
   );
 });
 

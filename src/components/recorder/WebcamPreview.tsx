@@ -4,11 +4,22 @@ import { useEffect, useRef, useState } from "react";
 import { useRecorderStore } from "@/stores/recorder-store";
 import { cn } from "@/lib/utils";
 
+const PREVIEW_MARGIN = 16;
+const PREVIEW_SIZE = 240;
+
+function getDefaultPosition() {
+  if (typeof window === "undefined") return { top: 0, left: PREVIEW_MARGIN };
+  return {
+    top: window.innerHeight - PREVIEW_SIZE - PREVIEW_MARGIN,
+    left: PREVIEW_MARGIN,
+  };
+}
+
 export function WebcamPreview({ stream }: { stream: MediaStream | null }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const { config } = useRecorderStore();
-  const [position, setPosition] = useState<{ top: number; left: number } | null>(
-    null
+  const [position, setPosition] = useState<{ top: number; left: number }>(
+    getDefaultPosition
   );
   const dragState = useRef<{
     startX: number;
@@ -30,23 +41,6 @@ export function WebcamPreview({ stream }: { stream: MediaStream | null }) {
   }, [stream]);
 
   if (!config.webcamEnabled || !stream) return null;
-
-  useEffect(() => {
-    if (position) return;
-    const margin = 16;
-    const size = 240;
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-    let top = margin;
-    let left = margin;
-    if (config.webcamPosition.includes("bottom")) {
-      top = viewportHeight - size - margin;
-    }
-    if (config.webcamPosition.includes("right")) {
-      left = viewportWidth - size - margin;
-    }
-    setPosition({ top, left });
-  }, [config.webcamPosition, position]);
 
   const handlePointerDown = (
     e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>
@@ -71,7 +65,7 @@ export function WebcamPreview({ stream }: { stream: MediaStream | null }) {
       "touches" in e ? e.touches[0] : (e as React.MouseEvent<HTMLDivElement>);
     const dx = point.clientX - dragState.current.startX;
     const dy = point.clientY - dragState.current.startY;
-    const size = 240;
+    const size = PREVIEW_SIZE;
     const margin = 8;
     const maxTop = window.innerHeight - size - margin;
     const maxLeft = window.innerWidth - size - margin;
@@ -97,11 +91,7 @@ export function WebcamPreview({ stream }: { stream: MediaStream | null }) {
         "fixed z-9999 h-60 w-60 overflow-hidden border border-white/40 bg-black/60 shadow-xl cursor-move",
         shapeClass,
       )}
-      style={
-        position
-          ? { top: position.top, left: position.left }
-          : undefined
-      }
+      style={{ top: position.top, left: position.left }}
       onMouseDown={handlePointerDown}
       onMouseMove={handlePointerMove}
       onMouseUp={handlePointerUp}

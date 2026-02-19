@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ClipCraft</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <div class="popup-header">
+      <h1>ClipCraft</h1>
+    </div>
+    <div class="popup-content">
+      <div id="status" class="status idle">
+        <div class="status-indicator"></div>
+        <span class="status-text">Not recording</span>
+      </div>
+      <div id="timer" class="timer" style="display: none;">
+        <span class="timer-label">Recording:</span>
+        <span class="timer-value">0:00</span>
+      </div>
+      <div class="actions">
+        <a href="http://localhost:3000/dashboard/record" target="_blank" class="btn btn-primary">
+          Open ClipCraft
+        </a>
+      </div>
+    </div>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>
