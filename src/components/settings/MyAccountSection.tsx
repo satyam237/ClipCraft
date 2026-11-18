@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { updateProfile } from "@/app/(dashboard)/settings/actions";
+import { getPlan, isPaidPlan } from "@/lib/plans";
 import type { User } from "@supabase/supabase-js";
 
 type Profile = {
@@ -75,15 +77,24 @@ export function MyAccountSection({
               </p>
             </div>
           </div>
-          <div className="border-t border-[var(--border)] pt-4">
+          <div className="border-t border-[var(--border)] pt-4 space-y-2">
             <p className="text-sm">
               <span className="text-[var(--muted-foreground)]">Email:</span>{" "}
               {user.email ?? "—"}
             </p>
-            <p className="mt-1 text-sm">
-              <span className="text-[var(--muted-foreground)]">Plan:</span>{" "}
-              {profile?.plan ?? "free"}
-            </p>
+            <div className="flex items-center gap-2">
+              <p className="text-sm">
+                <span className="text-[var(--muted-foreground)]">Plan:</span>{" "}
+                <span className="font-medium capitalize">
+                  {getPlan(profile?.plan).name}
+                </span>
+              </p>
+              {!isPaidPlan(profile?.plan) && (
+                <Button size="sm" variant="outline" asChild>
+                  <Link href="/pricing">Upgrade</Link>
+                </Button>
+              )}
+            </div>
           </div>
           {message === "success" && (
             <p className="text-sm text-green-600 dark:text-green-400">

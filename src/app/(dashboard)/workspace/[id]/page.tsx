@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -85,9 +86,9 @@ export default async function WorkspaceDetailPage({
             <ul className="space-y-2">
               {(videos ?? []).slice(0, 5).map((v: { id: string; title: string; status: string }) => (
                 <li key={v.id}>
-                  <a href={`/videos/${v.id}`} className="text-sm hover:underline">
+                  <Link href={`/videos/${v.id}`} className="text-sm hover:underline">
                     {v.title} ({v.status})
-                  </a>
+                  </Link>
                 </li>
               ))}
               {(!videos || videos.length === 0) && (

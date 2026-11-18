@@ -163,14 +163,15 @@ export function useBackgroundUpload(
         }
 
         createdVideoId = video.id;
-        if (cancelled || !workspaceId) return;
+        if (cancelled || !workspaceId || !createdVideoId) return;
+        const activeVideoId: string = createdVideoId;
         if (isMountedRef.current && !cancelled) {
-          setVideoId(createdVideoId);
+          setVideoId(activeVideoId);
           setStatus("uploading");
           setCreatingPhase(null);
         }
 
-        const { path } = await uploadRecording(sessionId, createdVideoId, workspaceId, (p) => {
+        const { path } = await uploadRecording(sessionId, activeVideoId, workspaceId, (p) => {
           if (cancelled) return;
           if (isMountedRef.current) {
             setProgress(p.percent);
@@ -199,7 +200,7 @@ export function useBackgroundUpload(
 
         const { error: videoUpdateError } = await supabase
           .from("videos")
-          .update({ status: "processing" })
+          .update({ status: "ready" })
           .eq("id", createdVideoId);
         if (videoUpdateError) {
           throw new Error(`Failed to update video status: ${videoUpdateError.message}`);

@@ -14,27 +14,23 @@ export default async function DashboardPage() {
   } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const workspaces = await getWorkspaces(supabase as import("@/lib/db/workspaces").SupabaseClientDatabase);
-
-  const videosRes = await supabase
-    .from("videos")
-    .select("id, title, status, duration, thumbnail_url, created_at, workspace_id")
-    .order("created_at", { ascending: false })
-    .limit(50);
+  const [workspaces, videosRes, viewsRes] = await Promise.all([
+    getWorkspaces(supabase as import("@/lib/db/workspaces").SupabaseClientDatabase),
+    supabase
+      .from("videos")
+      .select("id, title, status, duration, thumbnail_url, created_at, workspace_id")
+      .order("created_at", { ascending: false })
+      .limit(50),
+    supabase
+      .from("analytics_events")
+      .select("id", { count: "exact", head: true })
+      .eq("event_type", "view"),
+  ]);
   if (videosRes.error) throw videosRes.error;
+  if (viewsRes.error) throw viewsRes.error;
 
   const videosList = (videosRes.data as any[] | null) ?? [];
-  const viewsRes = await supabase
-    .from("analytics_events")
-    .select("id", { count: "exact", head: true })
-    .eq("event_type", "view");
-  if (viewsRes.error) throw viewsRes.error;
   const totalViews = (viewsRes.count ?? null) as number | null;
-  const recentEvents = await supabase
-    .from("analytics_events")
-    .select("id, event_type, created_at")
-    .order("created_at", { ascending: false })
-    .limit(5);
 
   return (
     <div className="space-y-6">
@@ -52,17 +48,17 @@ export default async function DashboardPage() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
-        <div className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-4">
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-5 shadow-sm hover:shadow-md">
           <p className="text-sm text-[var(--muted-foreground)]">Total videos</p>
-          <p className="text-2xl font-bold">{videosList.length}</p>
+          <p className="text-3xl font-bold text-[var(--primary)]">{videosList.length}</p>
         </div>
-        <div className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-4">
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-5 shadow-sm hover:shadow-md">
           <p className="text-sm text-[var(--muted-foreground)]">Total views</p>
-          <p className="text-2xl font-bold">{totalViews ?? 0}</p>
+          <p className="text-3xl font-bold text-[var(--primary)]">{totalViews ?? 0}</p>
         </div>
-        <div className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-4">
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-5 shadow-sm hover:shadow-md">
           <p className="text-sm text-[var(--muted-foreground)]">Workspaces</p>
-          <p className="text-2xl font-bold">{workspaces.length}</p>
+          <p className="text-3xl font-bold text-[var(--primary)]">{workspaces.length}</p>
         </div>
       </div>
 

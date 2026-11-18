@@ -2,38 +2,50 @@ import { createClient } from "@/lib/supabase/server";
 import { getWorkspaces } from "@/lib/db/workspaces";
 import { SettingsTabs } from "./SettingsTabs";
 
-const TAB_IDS = [
+const VALID_TABS = new Set([
   "account",
   "meeting-recordings",
   "notifications",
   "integrations",
   "quick-record",
   "shortcuts",
-] as const;
-type TabId = (typeof TAB_IDS)[number];
+]);
 
-function isValidTab(value: string | null): value is TabId {
-  return value !== null && TAB_IDS.includes(value as TabId);
-}
+type TabId =
+  | "account"
+  | "meeting-recordings"
+  | "notifications"
+  | "integrations"
+  | "quick-record"
+  | "shortcuts";
 
 export default async function SettingsPage({
   searchParams,
 }: {
   searchParams: Promise<{ tab?: string }>;
 }) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
   const params = await searchParams;
-  const tabParam = params.tab ?? null;
-  const initialTab: TabId = isValidTab(tabParam) ? tabParam : "account";
+  const initialTab: TabId = VALID_TABS.has(params.tab ?? "") ? (params.tab as TabId) : "account";
 
-  const { data: profile } = user
-    ? await supabase.from("profiles").select("*").eq("id", user.id).maybeSingle()
-    : { data: null };
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  const workspaces = user
-    ? await getWorkspaces(supabase as import("@/lib/db/workspaces").SupabaseClientDatabase)
-    : [];
+  const [profileResult, workspaces] = await Promise.all([
+    user
+      ? supabase
+          .from("profiles")
+          .select("display_name, avatar_url, plan, preferences")
+          .eq("id", user.id)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+    user
+      ? getWorkspaces(supabase as import("@/lib/db/workspaces").SupabaseClientDatabase)
+      : Promise.resolve([]),
+  ]);
+
+  const profile = profileResult.data;
 
   const displayName =
     (profile?.display_name as string | null) ??
@@ -52,7 +64,7 @@ export default async function SettingsPage({
       </div>
       <SettingsTabs
         user={user!}
-        profile={profile}
+        profile={profile as import("@/types/database").Database["public"]["Tables"]["profiles"]["Row"] | null}
         preferences={(profile?.preferences as Record<string, unknown>) ?? {}}
         workspaces={workspaces}
         initialTab={initialTab}

@@ -1,7 +1,7 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useState, useEffect } from "react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MyAccountSection } from "@/components/settings/MyAccountSection";
 import { updatePreferences, type ProfilePreferences } from "./actions";
 import type { User } from "@supabase/supabase-js";
@@ -29,10 +29,6 @@ const TAB_LABELS: Record<TabId, string> = {
   shortcuts: "Keyboard shortcuts",
 };
 
-function isValidTab(value: string | null): value is TabId {
-  return value !== null && TAB_IDS.includes(value as TabId);
-}
-
 export function SettingsTabs({
   user,
   profile,
@@ -47,22 +43,10 @@ export function SettingsTabs({
   initialTab: TabId;
 }) {
   const prefs = initialPreferences as ProfilePreferences;
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const tab = (() => {
-    const t = searchParams.get("tab");
-    return isValidTab(t) ? t : initialTab;
-  })();
-
-  const setTab = (value: string) => {
-    const next = value as TabId;
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("tab", next);
-    router.replace(`/settings?${params.toString()}`, { scroll: false });
-  };
+  const [tab, setTab] = useState<TabId>(initialTab);
 
   return (
-    <Tabs value={tab} onValueChange={setTab} className="w-full">
+    <Tabs value={tab} onValueChange={(v) => setTab(v as TabId)} className="w-full">
       <TabsList className="mb-4 w-full justify-start overflow-x-auto border-b border-[var(--border)] bg-transparent p-0 h-auto rounded-none">
         {TAB_IDS.map((id) => (
           <TabsTrigger
@@ -74,36 +58,35 @@ export function SettingsTabs({
           </TabsTrigger>
         ))}
       </TabsList>
-      <TabsContent value="account" className="mt-0">
-        <MyAccountSection
-          user={user}
-          profile={profile ? { display_name: profile.display_name, avatar_url: profile.avatar_url, plan: profile.plan } : null}
-        />
-      </TabsContent>
-      <TabsContent value="meeting-recordings" className="mt-0">
-        <MeetingRecordingsSection
-          workspaces={workspaces}
-          defaultWorkspaceId={prefs.default_workspace_id ?? ""}
-        />
-      </TabsContent>
-      <TabsContent value="notifications" className="mt-0">
-        <PushNotificationsSection
-          pushEnabled={prefs.push_notifications_enabled ?? false}
-          emailDigest={prefs.email_digest_enabled ?? false}
-          notifyWhenReady={prefs.notify_when_ready ?? true}
-        />
-      </TabsContent>
-      <TabsContent value="integrations" className="mt-0">
-        <IntegrationsSection />
-      </TabsContent>
-      <TabsContent value="quick-record" className="mt-0">
-        <QuickRecordSection
-          startOnOpen={prefs.quick_record?.start_on_open ?? false}
-        />
-      </TabsContent>
-      <TabsContent value="shortcuts" className="mt-0">
-        <KeyboardShortcutsSection />
-      </TabsContent>
+
+      <div className="mt-0">
+        {tab === "account" && (
+          <MyAccountSection
+            user={user}
+            profile={profile ? { display_name: profile.display_name, avatar_url: profile.avatar_url, plan: profile.plan } : null}
+          />
+        )}
+        {tab === "meeting-recordings" && (
+          <MeetingRecordingsSection
+            workspaces={workspaces}
+            defaultWorkspaceId={prefs.default_workspace_id ?? ""}
+          />
+        )}
+        {tab === "notifications" && (
+          <PushNotificationsSection
+            pushEnabled={prefs.push_notifications_enabled ?? false}
+            emailDigest={prefs.email_digest_enabled ?? false}
+            notifyWhenReady={prefs.notify_when_ready ?? true}
+          />
+        )}
+        {tab === "integrations" && <IntegrationsSection />}
+        {tab === "quick-record" && (
+          <QuickRecordSection
+            startOnOpen={prefs.quick_record?.start_on_open ?? false}
+          />
+        )}
+        {tab === "shortcuts" && <KeyboardShortcutsSection />}
+      </div>
     </Tabs>
   );
 }
@@ -209,19 +192,15 @@ function IntegrationsSection() {
         {items.map((item) => (
           <div
             key={item.name}
-            className="flex items-center justify-between rounded-lg border border-[var(--border)] bg-[var(--card)] p-4"
+            className="flex items-center justify-between rounded-2xl border border-[var(--border)] bg-[var(--card)] backdrop-blur-sm p-4"
           >
             <div>
               <p className="font-medium">{item.name}</p>
               <p className="text-xs text-[var(--muted-foreground)]">{item.description}</p>
             </div>
-            <button
-              type="button"
-              className="rounded-md border border-[var(--input)] px-3 py-1.5 text-sm font-medium opacity-75"
-              disabled
-            >
-              Connect
-            </button>
+            <span className="rounded-full bg-[var(--muted)] px-3 py-1 text-xs font-medium text-[var(--muted-foreground)]">
+              Coming soon
+            </span>
           </div>
         ))}
       </div>
@@ -234,6 +213,17 @@ function QuickRecordSection({
 }: {
   startOnOpen: boolean;
 }) {
+  const [cameras, setCameras] = useState<MediaDeviceInfo[]>([]);
+  const [mics, setMics] = useState<MediaDeviceInfo[]>([]);
+
+  useEffect(() => {
+    if (typeof navigator === "undefined" || !navigator.mediaDevices) return;
+    navigator.mediaDevices.enumerateDevices().then((devices) => {
+      setCameras(devices.filter((d) => d.kind === "videoinput"));
+      setMics(devices.filter((d) => d.kind === "audioinput"));
+    });
+  }, []);
+
   const update = async (start: boolean) => {
     await updatePreferences({
       quick_record: { start_on_open: start },
@@ -244,23 +234,33 @@ function QuickRecordSection({
       <p className="text-sm text-[var(--muted-foreground)]">
         Set defaults for quick record (camera, microphone, and behavior).
       </p>
-      <div className="space-y-3 rounded-lg border border-[var(--border)] bg-[var(--card)] p-4">
+      <div className="space-y-3 rounded-2xl border border-[var(--border)] bg-[var(--card)] backdrop-blur-sm p-4">
         <div>
           <label className="text-sm font-medium">Default camera</label>
           <select
-            className="mt-1 block w-full max-w-sm rounded-md border border-[var(--input)] bg-[var(--background)] px-3 py-2 text-sm"
+            className="mt-1 block w-full max-w-sm rounded-xl border border-[var(--input)] bg-[var(--card)] px-3 py-2 text-sm"
             defaultValue=""
           >
             <option value="">System default</option>
+            {cameras.map((d) => (
+              <option key={d.deviceId} value={d.deviceId}>
+                {d.label || `Camera ${d.deviceId.slice(0, 8)}`}
+              </option>
+            ))}
           </select>
         </div>
         <div>
           <label className="text-sm font-medium">Default microphone</label>
           <select
-            className="mt-1 block w-full max-w-sm rounded-md border border-[var(--input)] bg-[var(--background)] px-3 py-2 text-sm"
+            className="mt-1 block w-full max-w-sm rounded-xl border border-[var(--input)] bg-[var(--card)] px-3 py-2 text-sm"
             defaultValue=""
           >
             <option value="">System default</option>
+            {mics.map((d) => (
+              <option key={d.deviceId} value={d.deviceId}>
+                {d.label || `Microphone ${d.deviceId.slice(0, 8)}`}
+              </option>
+            ))}
           </select>
         </div>
         <label className="flex items-center gap-2">

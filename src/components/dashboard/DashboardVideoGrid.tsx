@@ -42,7 +42,7 @@ export function DashboardVideoGrid({ videos }: { videos: VideoRow[] }) {
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {videos.map((v) => (
         <Link key={v.id} href={`/videos/${v.id}`}>
-          <Card className="overflow-hidden transition-colors hover:bg-[var(--accent)]/50">
+          <Card className="overflow-hidden hover:shadow-lg hover:-translate-y-1 hover:border-[var(--primary)]/30 cursor-pointer">
             <div className="relative aspect-video bg-[var(--muted)]">
               {v.thumbnail_url ? (
                 <Image

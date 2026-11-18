@@ -1,50 +1,57 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f0f9ff;
+  --foreground: #0c1929;
   --card: #ffffff;
-  --card-foreground: #171717;
+  --card-foreground: #0c1929;
   --popover: #ffffff;
-  --popover-foreground: #171717;
-  --primary: #171717;
-  --primary-foreground: #fafafa;
-  --secondary: #f5f5f5;
-  --secondary-foreground: #171717;
-  --muted: #f5f5f5;
-  --muted-foreground: #737373;
-  --accent: #f5f5f5;
-  --accent-foreground: #171717;
+  --popover-foreground: #0c1929;
+  --primary: #0ea5e9;
+  --primary-foreground: #ffffff;
+  --secondary: #e0f2fe;
+  --secondary-foreground: #0c4a6e;
+  --muted: #e0f2fe;
+  --muted-foreground: #64748b;
+  --accent: #e0f2fe;
+  --accent-foreground: #0c4a6e;
   --destructive: #ef4444;
-  --destructive-foreground: #fafafa;
-  --border: #e5e5e5;
-  --input: #e5e5e5;
-  --ring: #171717;
-  --radius: 0.5rem;
+  --destructive-foreground: #ffffff;
+  --border: #bae6fd;
+  --input: #bae6fd;
+  --ring: #0ea5e9;
+  --radius: 0.75rem;
+  --gradient-from: #e0f2fe;
+  --gradient-via: #f0f9ff;
+  --gradient-to: #ffffff;
+  --sidebar-bg: rgba(255, 255, 255, 0.7);
 }
 
-/* Dark theme: applied when html has class "dark" (set by next-themes) */
 .dark,
 html.dark {
-  --background: #0a0a0a;
-  --foreground: #ededed;
-  --card: #0a0a0a;
-  --card-foreground: #ededed;
-  --popover: #0a0a0a;
-  --popover-foreground: #ededed;
-  --primary: #fafafa;
-  --primary-foreground: #171717;
-  --secondary: #262626;
-  --secondary-foreground: #fafafa;
-  --muted: #262626;
-  --muted-foreground: #a3a3a3;
-  --accent: #262626;
-  --accent-foreground: #fafafa;
-  --destructive: #7f1d1d;
+  --background: #0c1929;
+  --foreground: #e0f2fe;
+  --card: #0f2137;
+  --card-foreground: #e0f2fe;
+  --popover: #0f2137;
+  --popover-foreground: #e0f2fe;
+  --primary: #38bdf8;
+  --primary-foreground: #0c1929;
+  --secondary: #1e3a5f;
+  --secondary-foreground: #bae6fd;
+  --muted: #1e3a5f;
+  --muted-foreground: #7dd3fc;
+  --accent: #1e3a5f;
+  --accent-foreground: #bae6fd;
+  --destructive: #991b1b;
   --destructive-foreground: #fafafa;
-  --border: #262626;
-  --input: #262626;
-  --ring: #d4d4d4;
+  --border: #1e3a5f;
+  --input: #1e3a5f;
+  --ring: #38bdf8;
+  --gradient-from: #0c1929;
+  --gradient-via: #0f2137;
+  --gradient-to: #1e3a5f;
+  --sidebar-bg: rgba(15, 33, 55, 0.7);
 }
 
 @theme inline {
@@ -59,7 +66,18 @@ html.dark {
 }
 
 body {
-  background: var(--background);
+  background: linear-gradient(135deg, var(--gradient-from) 0%, var(--gradient-via) 50%, var(--gradient-to) 100%);
+  background-attachment: fixed;
   color: var(--foreground);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
+
+* {
+  transition-property: color, background-color, border-color, box-shadow, opacity, transform;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+*:focus-visible {
+  transition-duration: 0ms;
 }

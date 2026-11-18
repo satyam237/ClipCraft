@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { MessageSquare, ChevronDown } from "lucide-react";
 import { UploadStatusBadge } from "./UploadStatusBadge";
@@ -183,14 +184,19 @@ export function VideoPreviewLayout({
       {/* Chapters */}
       <ChaptersSection />
 
-      {/* Tags placeholder - Loom style */}
-      <div>
+      {/* Tags placeholder */}
+      <div className="flex items-center gap-2">
         <button
           type="button"
-          className="text-sm text-(--muted-foreground) hover:text-foreground"
+          className="rounded-lg border border-dashed border-(--border) px-2.5 py-1 text-sm text-(--muted-foreground) cursor-not-allowed opacity-60"
+          disabled
+          title="Tags are coming soon"
         >
           # add tag
         </button>
+        <span className="rounded-full bg-(--muted) px-2 py-0.5 text-[10px] font-medium text-(--muted-foreground)">
+          Coming soon
+        </span>
       </div>
 
       {/* Comments */}
@@ -220,7 +226,7 @@ export function VideoPreviewLayout({
           Delete & re-record
         </Button>
         <Button variant="ghost" asChild>
-          <a href="/dashboard">Back to dashboard</a>
+          <Link href="/dashboard">Back to dashboard</Link>
         </Button>
       </div>
     </div>

@@ -2,6 +2,11 @@
  * ClipCraft extension popup: shows recording status
  */
 
+// Configure the ClipCraft app origin here. This can be swapped at build time
+// if you maintain separate dev/prod builds of the extension.
+// Default to localhost; update this to your deployed URL when ready.
+const CLIPCRAFT_APP_ORIGIN = "http://localhost:3000";
+
 let recordingState = {
   isRecording: false,
   isPaused: false,
@@ -67,3 +72,18 @@ setInterval(() => {
 
 // Initial UI update
 updateUI();
+
+// Configure the "Open ClipCraft" link to point at the app origin.
+document.addEventListener("DOMContentLoaded", () => {
+  const link = document.getElementById("open-clipcraft-link");
+  if (!link) return;
+
+  const origin = CLIPCRAFT_APP_ORIGIN || "http://localhost:3000";
+  try {
+    const url = new URL("/dashboard/record", origin);
+    link.href = url.toString();
+  } catch {
+    // Fallback to localhost if the configured origin is invalid
+    link.href = "http://localhost:3000/dashboard/record";
+  }
+});

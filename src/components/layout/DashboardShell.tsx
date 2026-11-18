@@ -48,14 +48,14 @@ export function DashboardShell({
     user.user_metadata?.avatar_url as string | undefined;
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-screen" style={{ background: `linear-gradient(135deg, var(--gradient-from) 0%, var(--gradient-via) 50%, var(--gradient-to) 100%)` }}>
       <Sidebar
         user={user}
         workspaceLabel={workspaceLabel}
         memberCount={memberCount}
       />
       <div className="flex flex-1 flex-col overflow-hidden">
-        <header className="flex h-14 items-center gap-2 border-b border-(--border) px-6">
+        <header className="flex h-14 items-center gap-2 border-b border-[var(--border)] bg-[var(--card)]/60 backdrop-blur-md px-6">
           <div className="flex-1" />
           <ThemeToggle />
           <DropdownMenu>
